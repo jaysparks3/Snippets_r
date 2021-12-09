@@ -1,0 +1,20 @@
+library(readr)
+CIPCode2020_V0 <- read_csv("G:/Shared drives/HMCSE-PAM Lab/Jay's Space/_DataShaping/CIPCode2020_V0.csv")  %>%   
+mutate(CIPTitle=ifelse(CIPTitle=="Computer and Information Systems Security/Auditing/Information Assurance.","Cybersecurity.",CIPTitle))
+CIPCode2020_V0[CIPCode2020_V0$CIPTitle=="Cybersecurity.",]
+
+library(stringr)
+CIPCode2020V1 <- CIPCode2020_V0 %>% select( CIPTitle,CIP_CODE) %>%  arrange(CIPTitle) %>% 
+    mutate(CIPTitle_30 = str_sub(CIPTitle, end = -2)) %>%  # remove program.
+    mutate(CIPTitle_31 = str_replace_all(CIPTitle_30, "Programs|Program|Other|\\-|\\,|and", "")) %>% 
+    mutate(CIPTitle_32 = str_replace_all(CIPTitle_31,c("Technology"="Tech", "Technician"="TECHN", "Administration" = "Admin", 
+                                                       "Administrator"="Admin", "Administrative"="Admin", "Education"="Edu",
+                                                       "Teaching"="Teach", "General"="Gen", "Registered"="Reg",
+                                                       "Management"="Mgmt", "Information"="Info",
+                                                       "Laboratory" = "Lab", "service"="Svc",
+                                                       "Health"="H.", "Physical"="Phy", "Technologist"="Tech."))) %>% 
+    mutate(NCHAR32=nchar(CIPTitle_32, keepNA = T)) %>% 
+    mutate(CIPTitle_33= str_replace_all( CIPTitle_32,   fixed(" "),  "")) %>% 
+    mutate(NCHAR33=nchar(CIPTitle_33, keepNA = T)) %>% 
+    mutate(CIPTitle_34 = substr(CIPTitle_33, start = 0, stop = 30))  %>% 
+    mutate(CIPTitle=CIPTitle_32)
