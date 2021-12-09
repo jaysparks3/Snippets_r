@@ -1,0 +1,8 @@
+# using gtsummary for binary output
+apr_data1 %>%  mutate(APR = ifelse(APR =="Yes", 1,0))  %>% 
+    tbl_summary( by = APR,
+                statistic = all_continuous() ~ "{mean} ({sd}) {min} {max}",
+                missing = "no"
+                            ) %>% add_n() 
+                            
+#
