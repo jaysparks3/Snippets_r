@@ -1,0 +1,49 @@
+library(caret)
+# Performs stratified random split of the data set
+ 
+vari_apr = c("CIP_APR_updated","HS_APR_UPdated","HOURS_BROUGHT_TO_UNIVERSITY", "HSGPA_tenths", "GENDER")
+FTIC_RISK_APR_DF_vari <- FTIC_RISK_APR_DF %>%  mutate(APR = factor(APR)) %>% select(APR, vari_apr)
+TrainingIndex <- createDataPartition(FTIC_RISK_APR_DF_vari$APR, p=0.7, list = FALSE)
+TrainingSet <- FTIC_RISK_APR_DF_vari[TrainingIndex,] # Training Set
+TestingSet <- FTIC_RISK_APR_DF_vari[-TrainingIndex,] # Test Set
+# Build model using all factors and labels
+set.seed(111)
+admitted_glm <- glm(APR ~ ., data = TrainingSet, family="binomial")
+summary(admitted_glm)
+exp(coef(admitted_glm))
+set.seed(222)
+admitted_glm_re <- glm(APR ~APR_PROGRAM+APR_HSNAME+GENDER+codeHSGPA+PELL_VERF*codeHSGPA+HOURS_BROUGHT_TO_UNIVERSITY*codeHSGPA+PELL_VERF*GENDER+ETHNICITY*codeHSGPA, data = TrainingSet, family="binomial")
+summary(admitted_glm_re)
+#anova(admitted_glm, admitted_glm_re, test = "Chisq")
+library(tidyverse)  # data manipulation and visualization
+library(modelr)     # provides easy pipeline modeling functions
+library(broom)      # helps to tidy up model outputs
+P_value <- broom::tidy(admitted_glm)
+P_value
+#coefficient
+coef1 <- exp(coef(admitted_glm))
+coef_table <- knitr::kable(coef1)
+coef_table
+#confint(HSGPAunderlgm_re)
+vari_imp <- knitr::kable(caret::varImp(admitted_glm))
+vari_imp
+
+#accuracy 
+p_1 <- predict(admitted_glm, TrainingSet, type="response")
+#head(p_1,10)
+#head(TrainingSet,10)
+pred_1 <- ifelse(p_1>0.5, 1,0)
+tab_1 <- table(Predicted=pred_1, Actural=TrainingSet$APR)
+tab_1
+round(sum(diag(tab_1))/sum(tab_1),4) #80.15%
+#test data
+p_2 <- predict(admitted_glm, TestingSet, type="response")
+#head(p_2,10)
+#head(TestingSet,10)
+pred_2 <- ifelse(p_2>0.5, 1,0)
+tab_2 <- table(Predicted=pred_2, Actural=TestingSet$APR)
+tab_2
+round(sum(diag(tab_2))/sum(tab_2),4) #78.6
+### goodness of fit
+with(admitted_glm, pchisq(null.deviance - deviance, df.null-df.residual, lower.tail=F))#p-value==1.86439e-162
+
