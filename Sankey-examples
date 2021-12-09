@@ -1,0 +1,148 @@
+### Example - Snakey Charts
+
+```{r}
+### libraries
+
+library(tidyverse)
+library(readr)
+library(networkD3)
+library(sjmisc)
+library(tidyr)
+library(sjlabelled)
+library(ggplot2)
+library(RColorBrewer)
+library(extrafont)
+library(stringr)
+
+FTIC_UWFFTF_CIP_DEGREE_DF_202108_V2 <- read_csv("G:/Shared drives/HMCSE-PAM Lab/Jay's Space/_DataShaping/FTIC_UWFFTF_CIP_DEGREE_DF_202108_V2.csv")
+College_Dept_CIP_PgmCd_ <- read_csv("College_Dept_CIP_PgmCd_.csv")
+
+final_destination_long1 <- FTIC_GRADUATION_CIP_DF_clean %>% 
+    filter(Cohort == 2017) %>%  
+    select(Cohort,UWFFall1CIPTitle,UWFFall2CIPTitle,UWFFall3CIPTitle,UWFFall4CIPTitle,DEGREECIPTitle,Gradu_Time) %>%  
+  mutate(
+     UWFFall1CIPTitle = case_when(UWFFall1CIPTitle != ""~ paste0(UWFFall1CIPTitle, sep="_Y1")),
+     UWFFall2CIPTitle = case_when(UWFFall2CIPTitle != ""~ paste0(UWFFall2CIPTitle, sep="_Y2")),
+     UWFFall3CIPTitle = case_when(UWFFall3CIPTitle != ""~ paste0(UWFFall3CIPTitle, sep="_Y3")),
+     UWFFall4CIPTitle = case_when(UWFFall4CIPTitle != ""~ paste0(UWFFall4CIPTitle, sep="_Y4")),
+     DEGREECIPTitle   = case_when(DEGREECIPTitle != ""~ paste0(DEGREECIPTitle, sep="END")),
+     Gradu_Time       = case_when(Gradu_Time != ""~ paste0(Gradu_Time, sep="GRD"))) %>% 
+    mutate(UWFFall2CIPTitle= ifelse( (Cohort<=2020 & is.na(UWFFall2CIPTitle)),"Dropped",UWFFall2CIPTitle )) %>% 
+    mutate(UWFFall3CIPTitle= ifelse( (Cohort<=2019 & is.na(UWFFall3CIPTitle)),"Dropped",UWFFall3CIPTitle )) %>% 
+    mutate(UWFFall4CIPTitle= ifelse( (Cohort<=2018 & is.na(UWFFall4CIPTitle)),"Dropped",UWFFall4CIPTitle ),
+           UWFFall4CIPTitle=ifelse(UWFFall4CIPTitle=="Computer and Information Systems Security/Auditing/Information Assurance.",
+                                   "Cybersecurity",UWFFall4CIPTitle)) %>% 
+    mutate(DEGREECIPTitle  = ifelse( is.na(DEGREECIPTitle),"NoDegree",DEGREECIPTitle ),
+           DEGREECIPTitle=ifelse(DEGREECIPTitle=="Computer and Information Systems Security/Auditing/Information Assurance.",
+                                 "Cybersecurity",DEGREECIPTitle)) %>% 
+    mutate(Gradu_Time = ifelse(is.na(Gradu_Time), "NoDegree", Gradu_Time)) %>% 
+    replace(is.na(.), "NoDegree")
+# create flow 1
+final_destination1 <- final_destination_long1 %>% 
+  group_by(UWFFall1CIPTitle,UWFFall2CIPTitle) %>% 
+  summarise(n =n()) %>% ungroup() %>% 
+  select( In= 1, Out= 2, 3)
+# create flow2 
+final_destination2 <- final_destination_long1 %>% 
+  group_by(UWFFall2CIPTitle, UWFFall3CIPTitle) %>% 
+  summarise(n =n()) %>% ungroup() %>% 
+  select( In= 1, Out= 2, 3)
+# create flow3 
+final_destination3 <- final_destination_long1 %>% 
+  group_by(UWFFall3CIPTitle, UWFFall4CIPTitle) %>% 
+  summarise(n =n()) %>% ungroup() %>% 
+  select( In= 1, Out= 2, 3)
+# create flow4 
+final_destination4 <- final_destination_long1 %>% 
+  group_by(UWFFall4CIPTitle, DEGREECIPTitle) %>% 
+  summarise(n =n()) %>% ungroup() %>% 
+  select( In= 1, Out= 2, 3)
+# create flow5 
+final_destination5 <- final_destination_long1 %>% 
+  group_by(DEGREECIPTitle, Gradu_Time) %>% 
+  summarise(n =n()) %>% ungroup() %>% 
+  select( In= 1, Out= 2, 3)
+#create data 
+FD1 <- rbind(final_destination1, final_destination2) 
+FD2 <- rbind(final_destination3, final_destination4) 
+FD3 <- rbind(FD1, FD2) 
+FD4 <- rbind(FD3, final_destination5) 
+
+# write.csv(flow_data_final_destination,"sankey_final_destination.csv",row.names = F)
+# saveRDS(flow_data_final_destination, file="flow_data_final_destination")
+
+#nodes
+nodes_FD <- FD4 %>% 
+  select(In, Out) %>% 
+  pivot_longer(c("In","Out"), names_to = "col_name",
+               values_to = "name_match") %>% 
+  select(-1) %>% 
+  distinct() %>% 
+  mutate(name = str_sub( name_match, end=-4)) %>%  # omit the flow# 
+  as.data.frame()
+#links
+plot_id_FD <- FD4 %>% 
+  mutate( IDIn = match( In, nodes_FD$name_match)-1,
+          IDOut = match(Out, nodes_FD$name_match)-1,
+          Freq =n) %>% as.data.frame()
+
+sankey_FD <- sankeyNetwork(Links = plot_id_FD, Nodes = nodes_FD,
+               Source = "IDIn", Target = "IDOut",
+               Value ="Freq", NodeID ="name",
+               sinksRight = FALSE, fontSize = 14, fontFamily = "Arial",
+               nodeWidth = 30, nodePadding = 20)
+               #colourScale = node_colour,
+               #NodeGroup = "ColourGroup",
+               #height = 500, width = 800)
+
+
+sankey_FD
+
+# IDIn = match( flow_data_final_destination$In, nodes_FD$name_match)-1;IDIn
+# IDOut = match(flow_data_final_destination$Out, nodes_FD$name_match)-1;IDOut
+
+```
+
+
+```{r}
+
+install.packages("sankeywheel")
+
+library(sankeywheel)
+#> Highcharts (www.highcharts.com) is a Highsoft software product which is
+#> not free for commercial and governmental use
+
+DT::datatable(sankeydf)
+
+```
+```{r}
+sankeywheel(from = sankeydf$from,
+            to = sankeydf$to,
+            weight = sankeydf$weight,
+            type = "dependencywheel", 
+            width = "100%")
+sankeywheel(from = final_destination1$from,
+            to = sankeydf$to,
+            weight = sankeydf$weight,
+            type = "sankey", 
+            width = "100%")
+library(manipulateWidget)
+combineWidgets(
+  sankeywheel(from = sankeydf$from,
+            to = sankeydf$to,
+            weight = sankeydf$weight,
+            type = "sankey", 
+            width = "100%",
+            theme = "sunset", 
+            title = "SUNSET"),
+  sankeywheel(from = sankeydf$from,
+            to = sankeydf$to,
+            weight = sankeydf$weight,
+            type = "dependencywheel", 
+            width = "100%", 
+            theme = "sunset", 
+            title = "SUNSET"),
+  byrow = TRUE, ncol = 2, width = "100%", height = "300px"
+)
+
+```
