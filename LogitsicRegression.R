@@ -42,3 +42,28 @@ round(sum(diag(tab_2))/sum(tab_2),4) #78.6
 with(admitted_glm, pchisq(null.deviance - deviance, df.null-df.residual, lower.tail=F))#p-value==1.86439e-162
 #anova(admitted_glm, admitted_glm_re, test = "Chisq")
 
+## prediction for new ftic
+NEWFTIC <- trim_apr_data2_V0 %>% filter(Cohort == 2021) 
+
+new_FTIC_data <- NEWFTIC %>% 
+    mutate(APR= factor(APR)) %>% 
+    select(APR, vari_apr1) #%>% filter(!is.na(OFFER_GPA))
+
+#call model
+RISK_APR_MODEL <- readRDS("RISK_APR_MODEL_glmV0.rds")
+#prediction
+PREDICTION_NEWFTIC <- round(predict(RISK_APR_MODEL, new_FTIC_data, type="response"),4)
+hist(PREDICTION_NEWFTIC)
+
+PREDICTION_DF <- cbind(NEWFTIC, PREDICTION_NEWFTIC)
+PREDICTION_DF$codeProb_APR <- ifelse(PREDICTION_DF$PREDICTION_NEWFTIC>=0.90,"low-risk",
+                                     ifelse(PREDICTION_DF$PREDICTION_NEWFTIC>=0.60,"moderate-risk","high-risk"))
+
+
+
+xtabs(~PREDICTION_DF$codeProb_APR)
+# export resutls
+write.csv(PREDICTION_DF,"OUTPUT_PREDICTION_NEWFTIC2021V0.csv") # removed 11 since missing HSGPA
+colSums(is.na(PREDICTION_DF))
+
+
