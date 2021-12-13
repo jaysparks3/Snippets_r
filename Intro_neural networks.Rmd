@@ -1,0 +1,156 @@
+---
+title: "Neural Nets"
+author: "Jay Kim"
+date: "12/13/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(MASS)
+mydata <- Boston
+head(mydata)
+qplot( x=mydata$black, y= mydata$medv)
+any(is.na(mydata))
+```
+### Normalize
+
+```{r}
+# max values for each factors
+maxs <- apply(mydata, 2, max) # give maximum values for each colms
+maxs
+
+#min values for each factors
+mins <-  apply(mydata, 2, min)
+mins
+
+# defalt scale function comstumize using min and max
+scaled.data <- scale(mydata, center = mins, scale = maxs-mins) # matrix
+scaled <-  as.data.frame(scaled.data) # mormalized data is important to get right results
+scaled # standarized data
+```
+
+
+### Data partitions
+
+```{r}
+#install.packages("caTools")
+library(caTools)
+
+split <-  sample.split(scaled$medv, SplitRatio = 0.7)
+train <- subset(scaled, split == T)
+test <- subset(scaled, split == F)
+
+
+```
+
+### NEURALNET - factors
+
+
+```{r}
+#install.packages("neuralnet")
+library(neuralnet) # does not accept y~.,
+n_factor <- names(train)
+n_factor # colnames
+
+formular_f <- as.formula( paste("medv ~ ", paste(n_factor[!n_factor %in% "medv"], collapse = " + ")))
+formular_f # save time for type the colnames
+
+nn <- neuralnet(formular_f, data = train, hidden =  c(5,3), linear.output = TRUE) # if it's clssification (FALSE)
+# first hidden layer = , and 2nd = 
+# choose the reasonable values for hidden layer
+plot(nn) # output is not super inetpretable
+```
+
+### Prediction
+
+```{r}
+predicted.nn.values <- compute(nn, test[1:13]) # without actual value of medv
+predicted.nn.values # check structure (list)
+
+#unscale the origin data
+true.preidctions <- predicted.nn.values$net.result*(max(mydata$medv) + min(mydata$medv))
+test.r <-  (test$medv)*(max(mydata$medv)-min(test$medv))+min(mydata$medv)
+MSE.nn <- sum((test.r - true.preidctions)^2)/nrow(test)
+MSE.nn
+
+
+```
+
+### plot
+
+```{r}
+error.df <- data.frame(test.r, true.preidctions)
+head(error.df,10)
+library(ggplot2)
+ggplot(error.df, aes(test.r, true.preidctions)) +
+    geom_point() + 
+    stat_smooth()
+
+
+```
+
+### Project
+
+```{r}
+
+library(readr)
+bank_note_data <- read_csv("CSV files for ML Projects/bank_note_data.csv")
+
+# train test split
+library(caTools)
+set.seed(123)
+split <- sample.split( bank_note_data$Class, SplitRatio = 0.7)
+
+train <- subset(bank_note_data, split == TRUE)
+test <-  subset(bank_note_data, split= FALSE)
+
+# net
+library(neuralnet)
+nn <- neuralnet(Class ~ Image.Var + Image.Skew + Image.Curt + Entropy, data= bank_note_data, 
+                hidden = c(5,3), linear.output = FALSE)
+
+
+# predicted values
+predicted.nn.bank <- compute(nn, test[1:4])
+head(predicted.nn.bank$net.result,10)
+
+predictions <- sapply(predicted.nn.bank$net.result, round)
+head(predictions)
+
+# confusion matrix
+table(predictions, test$Class)
+
+# check for perfect results
+library(randomForest)
+
+set.seed(123)
+bank_note_data$Class <- factor(bank_note_data$Class)
+split <- sample.split( bank_note_data$Class, SplitRatio = 0.7)
+
+train <- subset(bank_note_data, split == TRUE)
+test <-  subset(bank_note_data, split= FALSE)
+
+rf.model <- randomForest(Class ~., data = train)
+rf.pred  <- predict(rf.model, test)
+table(rf.pred, test$Class)
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
