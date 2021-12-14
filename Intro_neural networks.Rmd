@@ -15,6 +15,11 @@ mydata <- Boston
 head(mydata)
 qplot( x=mydata$black, y= mydata$medv)
 any(is.na(mydata))
+## dummy
+install.packages("fastDummies")
+library("fastDummies")
+My.dummy.data <- dummy_cols(mydata, select_columns = "URM") %>% select(-URM)
+
 ```
 ### Normalize
 
@@ -28,7 +33,7 @@ mins <-  apply(mydata, 2, min)
 mins
 
 # defalt scale function comstumize using min and max
-scaled.data <- scale(mydata, center = mins, scale = maxs-mins) # matrix
+scaled.data <- scale(mydata, center = mins, scale = maxs-mins) # matrix used all numeric factors in here
 scaled <-  as.data.frame(scaled.data) # mormalized data is important to get right results
 scaled # standarized data
 ```
@@ -57,7 +62,7 @@ n_factor <- names(train)
 n_factor # colnames
 
 formular_f <- as.formula( paste("medv ~ ", paste(n_factor[!n_factor %in% "medv"], collapse = " + ")))
-formular_f # save time for type the colnames
+formular_f # save time for type th# factorse colnames
 
 nn <- neuralnet(formular_f, data = train, hidden =  c(5,3), linear.output = TRUE) # if it's clssification (FALSE)
 # first hidden layer = , and 2nd = 
