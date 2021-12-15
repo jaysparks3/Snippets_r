@@ -82,6 +82,27 @@ test.r <-  (test$medv)*(max(mydata$medv)-min(test$medv))+min(mydata$medv)
 MSE.nn <- sum((test.r - true.preidctions)^2)/nrow(test)
 MSE.nn
 
+#prediction for classification
+apr_nn$result.matrix
+apr_nn$net.result
+#predicted train
+predicted.train <- neuralnet::compute(apr_nn, train_nn[1:4])
+head( predicted.train$net.result,10)
+pred_1 <- ifelse(predicted.train$net.result > 0.5, 1,0)
+head(predictions_train,10)
+head(pred_1,10)
+#confusion matrix
+table(pred_1[,2], train_nn$APR) #2452/2866
+
+
+#predicted test
+predicted.test <- neuralnet::compute(apr_nn, test_nn[1:4])
+head(predicted.test$net.result,10)
+
+predictions_test <- ifelse(predicted.test$net.result > 0.5, 1,0)
+head(predictions_test,10)
+#confusion matrix
+table(predictions_test[,2], test_nn$APR) #1042/1229
 
 ```
 
