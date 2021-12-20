@@ -1,0 +1,62 @@
+library(dplyr)
+library(readr)
+COURSES_TAKEN0922021 <- read_csv("G:/Shared drives/HMCSE-PAM Lab/DATA 202108/Updated 9-22-21/COURSES_TAKEN.csv") %>%  # 202108
+                 filter(!is.na(GRADE_AWARDED)) 
+library(readr)
+COURSES_TAKEN12162021 <- read_csv("G:/Shared drives/HMCSE-PAM Lab/DATA 202108/202108/Updated 12-16-21/COURSES_TAKEN.csv") %>% 
+    filter(!is.na(GRADE_AWARDED)) 
+max(COURSES_TAKEN12162021$DEMO_TIME_FRAME) # 202108
+UWFGPA_grades <- c("A","A-","B+","B","B-","C+","C","C-","D+","D","F","NF","U") # uwf grades include when computing their GPA
+new_crs <-   COURSES_TAKEN12162021  %>%  
+    filter(GRADE_AWARDED %in% UWFGPA_grades) %>% 
+    mutate(Grade_point=rep("0"))
+
+
+
+### DWF grades inclded when computing the GPA
+UWFGPA_grades_point <-  c(4.00, 3.70,3.30, 3.00,2.70,2.30,2.00,1.70,1.30,1.00,0.00, 0.00,0.00) #C 2.00 C- 1.70
+
+### To get FTIC 2020 GPA
+
+select_crs_vari <-  new_crs %>% 
+    select("UWFID"=UNIV_ROW_ID, "crs_DEMO_TIME"=DEMO_TIME_FRAME, contains("crs"),STU_SECTN_CRED,
+           GRADE_AWARDED ) 
+   
+select_crs_vari[select_crs_vari$GRADE_AWARDED == "A", "Grade_point"] <- "4.00"
+select_crs_vari[select_crs_vari$GRADE_AWARDED == "A-", "Grade_point"] <- "3.70"
+select_crs_vari[select_crs_vari$GRADE_AWARDED == "B+", "Grade_point"] <- "3.30"
+select_crs_vari[select_crs_vari$GRADE_AWARDED == "B", "Grade_point"] <- "3.00"
+select_crs_vari[select_crs_vari$GRADE_AWARDED == "B-", "Grade_point"] <- "2.70"
+select_crs_vari[select_crs_vari$GRADE_AWARDED == "C+", "Grade_point"] <- "2.30"
+select_crs_vari[select_crs_vari$GRADE_AWARDED == "C", "Grade_point"] <- "2.00"
+select_crs_vari[select_crs_vari$GRADE_AWARDED == "C-", "Grade_point"] <- "1.70"
+select_crs_vari[select_crs_vari$GRADE_AWARDED == "D", "Grade_point"] <- "1.30"
+select_crs_vari[select_crs_vari$GRADE_AWARDED == "D+", "Grade_point"] <- "1.00"
+select_crs_vari[select_crs_vari$GRADE_AWARDED == "F", "Grade_point"] <- "0.00"
+select_crs_vari[select_crs_vari$GRADE_AWARDED == "NF", "Grade_point"] <- "0.00"
+select_crs_vari[select_crs_vari$GRADE_AWARDED == "U", "Grade_point"] <- "0.00"
+
+select_crs_vari[select_crs_vari$UWFID=="970398311",]
+COURSES_TAKEN12162021[COURSES_TAKEN12162021$UNIV_ROW_ID=="970398311",]
+
+select_crs_vari1 <- select_crs_vari %>% 
+    group_by(UWFID, crs_DEMO_TIME) %>% 
+    mutate(Grade_point = as.numeric(Grade_point)) %>% 
+    dplyr::summarise(TERM_HRS = sum(STU_SECTN_CRED, na.rm = T), TERM_TGP = sum(Grade_point*STU_SECTN_CRED, na.rm = T) ,
+                     TERM_GPA = round(TERM_TGP/TERM_HRS, 2) )
+
+
+select_crs_vari2 <- select_crs_vari1 %>% group_by(UWFID) %>% arrange(UWFID, .by_group = T) %>% 
+           dplyr::mutate( CUM_HRS  =cumsum(TERM_HRS),
+            CUM_TGP  =cumsum( TERM_TGP ) ,
+            CUM_GPA  = round(CUM_TGP/CUM_HRS, 2) )          
+                     
+                     
+
+select_crs_vari1[select_crs_vari1$UWFID=="970400130",]
+select_crs_vari2[select_crs_vari2$UWFID=="970400130",]
+
+          
+#write.csv(select_crs_vari, "crs_grade_points_ends202108.csv", row.names = F)
+write.csv(select_crs_vari2, "UWFGPA_crs_grade_points_ends202108.csv", row.names = F)
+
