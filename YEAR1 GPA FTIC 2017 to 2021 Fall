@@ -1,0 +1,17 @@
+#####
+# first fall gpa grends
+library(readr)
+library(tidyverse)
+UWFGPA_FTIC_V0 <- read_csv("G:/Shared drives/HMCSE-PAM Lab/Jay's Space/_HIGH_PRIORITY_PROJECTS/APR/01 FILES/UWFGPA_FTIC_V0.csv")
+addmargins(table(UWFGPA_FTIC_V0$F1_Cohort, UWFGPA_FTIC_V0$F1_is.spring.stopout))
+NA_crstime <- UWFGPA_FTIC_V0[is.na(UWFGPA_FTIC_V0$CRS_crs_DEMO_TIME),]
+Fall1GPA_TRENDS <- UWFGPA_FTIC_V0 %>% 
+    mutate(CRS_Term_id = ifelse(is.na(CRS_Term_id), "Withdrawn", CRS_Term_id))  %>% 
+    mutate(GPA_STATUS1 = ifelse(is.na(CRS_CUM_GPA),"Withdrawn",
+                         ifelse(CRS_CUM_GPA >= 2.77, "Above2.77","Below2.77"))) %>% 
+    mutate(GPA_STATUS2 = ifelse(is.na(CRS_CUM_GPA), "Withdrawn",
+                        ifelse(CRS_CUM_GPA < 2.00, "Below2.00",
+                        ifelse(CRS_CUM_GPA < 2.77 ,"GPA[2.00,2.77)", "Above2.77")))) %>% 
+    mutate( GPA_STATUS3  = ifelse(is.na(CRS_CUM_GPA), "Withdrawn",
+                            ifelse(CRS_CUM_GPA < 2.00, "Below2.00", "Above2.00"))) 
+addmargins(table(Fall1GPA_TRENDS$CRS_Term_id, Fall1GPA_TRENDS$F1_Cohort, Fall1GPA_TRENDS$GPA_STATUS2))
