@@ -1,0 +1,31 @@
+
+
+applicants_2017to2021_COM_HSGPA2021V1 <-  read_csv("applicants_2017to2021_COM_HSGPA2021V1.csv") %>% 
+    mutate(OFFER_GPA = ifelse(is.na(OFFER_GPA), GPA_HIGHSCHOOL, OFFER_GPA))  %>% 
+    mutate(OFFER_GPA= ifelse(OFFER_GPA < 2.0, NA, OFFER_GPA )) %>% # error HAGPA
+    mutate(HS_NAME = ifelse(HS_NAME =="Titusville Astronaut HS", "Astronaut High School",HS_NAME)) %>% 
+    mutate(HS_CEEB = ifelse(is.na(HS_CEEB), "N/A", HS_CEEB), HS_NAME = ifelse(is.na(HS_NAME), "N/A", HS_NAME)) %>% 
+    filter(!is.na(Cohort))
+
+risk_apr_data <- applicants_2017to2021_COM_HSGPA2021V1 %>% 
+    filter(!is.na(APR))  # exclude withdrawn FTIC
+  
+
+PROG_apr <- risk_apr_data %>% select(PROGRAM_CODE, PROGRAM_DESC, APR, Cohort) %>% 
+    filter(!is.na(.)) %>% 
+    group_by(PROGRAM_DESC,PROGRAM_CODE, APR) %>% 
+     summarise(Count=n(), .groups = "drop") %>% 
+    tidyr::pivot_wider(names_from = APR, values_from = Count) %>% 
+    replace(is.na(.), 0) %>% 
+    mutate(PROG_Total = (Yes+No), PROG_APR_Rate= round(Yes/PROG_Total,4)) %>% 
+    mutate(PROG_APR_Rate = ifelse(PROG_APR_Rate < 0.25, 0.20, PROG_APR_Rate)) %>% 
+    arrange(PROGRAM_DESC)
+
+PROG_apr
+
+#density plot
+hist(PROG_apr$PROG_APR_Rate, breaks = 25, col= "yellow") 
+plot(density(PROG_apr$PROG_APR_Rate), col="green")
+  
+
+write.csv(PROG_apr[,c(1,2,5,6)], "PROGRAM_APR20172020V0.csv", row.names = F) #Nursing/ BSN Program is not in 2021
