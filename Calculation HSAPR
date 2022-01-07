@@ -1,0 +1,97 @@
+
+### Import Data
+
+```{r message=FALSE, warning=FALSE}
+## From ACCEPTANCE Folder
+library(readr)
+applicants_2017to2021_COM_HSGPA2021V1 <-  read_csv("applicants_2017to2021_COM_HSGPA2021V1.csv") %>% 
+    mutate(OFFER_GPA = ifelse(is.na(OFFER_GPA), GPA_HIGHSCHOOL, OFFER_GPA))  %>% 
+    mutate(OFFER_GPA= ifelse(OFFER_GPA < 2.0, NA, OFFER_GPA )) %>% # error HAGPA
+    mutate(HS_NAME = ifelse(HS_NAME =="Titusville Astronaut HS", "Astronaut High School",HS_NAME)) %>% 
+    mutate(HS_CEEB = ifelse(is.na(HS_CEEB), "N/A", HS_CEEB), HS_NAME = ifelse(is.na(HS_NAME), "N/A", HS_NAME)) %>% 
+    filter(!is.na(Cohort))
+applicants_2017to2021_COM_HSGPA2021V1[!duplicated(applicants_2017to2021_COM_HSGPA2021V1$UWFID),]
+### FTIC 2021
+FTIC2021_APR <-  applicants_2017to2021_COM_HSGPA2021V1 %>% 
+    filter(Cohort == 2021) # tier scores are fixed
+
+ 
+# trim data
+import_data <- applicants_2017to2021_COM_HSGPA2021V1 %>% 
+    filter(!is.na(APR))  # exclude withdrawn FTIC
+addmargins(table(import_data$APR))  # overall APR=0.8047324  
+risk_apr_data <- import_data  
+
+HS_H <- risk_apr_data%>% 
+    filter(str_detect(HS_CEEB, "00H..."))
+#colSums(is.na(risk_apr_data))
+
+```
+
+### High School APR (2017-2020)
+
+```{r HS APR}
+#all high school from outside USA
+AllINT_HS <-  risk_apr_data %>% select(HS_CEEB, HS_NAME,HS_CNTY, APR, Cohort) %>% 
+    filter(!is.na(.)) %>% filter(str_detect(HS_NAME, "- All...")) %>% 
+    group_by(HS_CEEB,HS_NAME, APR) %>% 
+    summarise(Count=n(), .groups = "drop") %>% 
+    tidyr::pivot_wider(names_from = APR, values_from = Count) %>% 
+    replace(is.na(.), 0) %>% 
+    mutate(HS_Total = (Yes+No)) %>% 
+    mutate(TotalYes = sum(Yes), TotalCount=sum(HS_Total), HS_APR_INT = (TotalYes/TotalCount)) 
+
+
+# cutoff < 10
+apr10_HS <- risk_apr_data %>% select(HS_CEEB, HS_NAME,HS_CNTY, APR, Cohort) %>% 
+    filter(!is.na(.)) %>%  
+    group_by(HS_CEEB,HS_NAME, APR) %>% 
+    summarise(Count=n(), .groups = "drop") %>% 
+    tidyr::pivot_wider(names_from = APR, values_from = Count) %>% 
+    replace(is.na(.), 0) %>% filter(!str_detect(HS_NAME, "- All...")) %>% 
+    mutate(HS_Total = (Yes+No)) %>% 
+    filter(HS_Total < 10) %>% 
+    mutate(TotalYes = sum(Yes), TotalCount=sum(HS_Total), HS_APR_cutoff9 = (TotalYes/TotalCount)) # 0.7576453 (991/1308)
+# new hs code total =1
+aprNew_HS <- risk_apr_data %>% select(HS_CEEB, HS_NAME,HS_CNTY, APR, Cohort) %>% 
+    filter(!is.na(.)) %>%  
+    group_by(HS_CEEB,HS_NAME, APR) %>% 
+    summarise(Count=n(), .groups = "drop") %>% 
+    tidyr::pivot_wider(names_from = APR, values_from = Count) %>% 
+    replace(is.na(.), 0) %>%   
+    mutate(HS_Total = (Yes+No)) %>% 
+    filter(HS_Total  == 1 ) %>% 
+    mutate(TotalYes = sum(Yes), TotalCount=sum(HS_Total), HS_APR_NEW = (TotalYes/TotalCount))
+
+# all hs lists
+HS_apr <- risk_apr_data %>% select(HS_CEEB, HS_NAME,HS_CNTY, APR, Cohort) %>% 
+    filter(!is.na(.)) %>%  
+    group_by(HS_CEEB,HS_NAME, APR) %>% 
+     summarise(Count=n(), .groups = "drop") %>% 
+    tidyr::pivot_wider(names_from = APR, values_from = Count) %>% 
+    replace(is.na(.), 0) %>% 
+    mutate(HS_Total = (Yes+No), HS_APR_Rate= round(Yes/HS_Total,4)) 
+# complete dataset
+HS_apr1 <- merge(HS_apr, AllINT_HS[,c(1,2,8)], by = c("HS_CEEB","HS_NAME"), all.x = T)
+HS_apr2 <- merge(HS_apr1, apr10_HS[,c(1,2,8)], by=   c("HS_CEEB","HS_NAME"), all.x=T )
+HS_apr3 <- merge(HS_apr2, aprNew_HS[,c(1,2,8)], by=   c("HS_CEEB","HS_NAME"), all.x=T ) %>%
+    mutate(NEW_HSCODE = ifelse(is.na(HS_APR_NEW),"Old","New" )) %>% 
+    rowwise() %>% 
+    mutate(AVE_HS_APR = mean(c(HS_APR_Rate,HS_APR_INT,HS_APR_cutoff9,HS_APR_NEW), na.rm=T))
+
+    
+
+HS_apr[which(duplicated(HS_apr$HS_CEEB)),]
+HS_apr[HS_apr$HS_CEEB=="101758",]
+HS_apr[which(duplicated(HS_apr$HS_NAME)),] # fixed #line 19
+risk_apr_data[risk_apr_data$HS_NAME=="Southside High School",] # came from different CNTY
+HS_apr[HS_apr$HS_NAME=="N/A",] # not applicable 0.7
+
+# density plot
+hist(HS_apr3$HS_APR_Rate, breaks = 25, col= "pink") 
+# add normal curve
+plot(density(HS_apr3$AVE_HS_APR), col="blue")
+ 
+#write.csv(HS_apr[,c(1,5,6)], "HS_APR20172020_V0.csv", row.names = F)
+write.csv(HS_apr3, "HS_APR20172020_V1.csv", row.names = F)
+```
