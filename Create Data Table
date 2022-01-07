@@ -1,0 +1,9 @@
+# create data table with print/download options
+
+library(DT)
+DT_V7 <- datatable(OUTPUT_PREDICTION_NEWFTIC2021V7[,c(55,63,64,65,22,23,24,51,52,57,60,62,66,67,70,97,100,101:107)], 
+                   extensions = "Buttons",  
+                   filter = "top",
+                   options = list(dom="Blfrtip",
+                   buttons=c("copy","csv","excel","pdf","print"), 
+                   lengthMenu=list(c(10,25,50,-1), c(10,25,50,"All")),pageLength=25))
