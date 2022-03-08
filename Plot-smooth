@@ -1,0 +1,34 @@
+### lm plot
+HSP <- HSGPA_scatter %>% ggplot(aes( x = FIRST_FALL_GPA , y = log1stYearGPA , color =  GPA_HIGHSCHOOL)) +
+    geom_point() + stat_smooth( method =  "lm", se= TRUE)   +
+    labs(title="Semi-log:First Fall GPA vs First Year GPA") + xlab("First Fall GPA") +ylab("First Year GPA")
+    
+    
+    
+ ### ANOVA Plot
+     
+anovabox <- ggboxplot(GPA.DATA.DIFFGPA, x = "HS_GPA", y = "FinalY1GPA", color = "HS_GPA", 
+          add = "jitter", legend = "none") +
+  rotate_x_text(angle = 45)+
+  geom_hline(yintercept = mean(GPA.DATA.DIFFGPA$FinalY1GPA), linetype = 2.069311)+ # Add horizontal line at base mean
+  stat_compare_means(method = "anova", label.y = 3.88) +        # Add global annova p-value
+  stat_compare_means(label = "p.signif", method = "t.test",
+                     ref.group = ".all.")  + xlab("High sChool GPA") + ylab("1st Year GPA")
+                     
+ ### add equationi plot
+                     library(ggpmisc)
+con_p <- GPA_UWF_MAAV_majorAPR %>% filter(GPA_HIGHSCHOOL != 0.00) %>% 
+    filter(UWF1 != 0.00) %>% mutate(logUWF1=log(UWF1)) %>% 
+     filter(!(abs(GPA_HIGHSCHOOL - median(GPA_HIGHSCHOOL)) > 3*sd(GPA_HIGHSCHOOL)))  
+formula <- y ~ x
+mlplot <- ggplot(con_p, aes(x= UWF1, y= UWF2, color = GPA_HIGHSCHOOL)) +
+  geom_point(alpha = 0.3 ) +
+  #facet_wrap(~clarity, scales = "free_y") +
+  geom_smooth(method = "lm", formula = formula, se = F) +
+  stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+               label.x.npc = "right", label.y.npc = 0.15,
+               formula = formula, parse = TRUE, size = 5, color="red") +
+    labs(title = "Fall GPA vs. Spring GPA") +xlab("Fall GPA")+ylab("Spring GPA")
+ 
+### correlation matrix
+psych::pairs.panels(num.cols.corr.raw, cex.cor=4, main="Histograms and Correlations for a Data Matrix")
