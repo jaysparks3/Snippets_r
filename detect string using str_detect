@@ -1,0 +1,6 @@
+GPAY1_MAA2022_DF_V2 <- GPAY1_MAA2022_DF_V1 %>% mutate(ACT_SAT = pmax(ACT_PROPORTION, SAT_PROPORTION)) %>%
+    relocate(ACT_SAT, .after = GPA_HIGHSCHOOL) %>% 
+    select(-ACT_PROPORTION, -SAT_PROPORTION,  -PSE) %>% 
+    mutate(is.Engineering = ifelse(str_detect( ENTRY_PROGRAM, "...Engineering"), "Y","N")) %>% 
+     mutate(is.Engineering = ifelse(str_detect( ENTRY_PROGRAM, "Engineering..."), "Y",is.Engineering)) %>% 
+    relocate(is.Engineering, .after =ENTRY_PROGRAM ) %>% select(-ENTRY_PROGRAM)
