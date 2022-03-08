@@ -1,0 +1,9 @@
+library(gtsummary)
+summary_apr <- mydata.state.county[,-1] %>% dplyr::select(apr_varis) %>% filter(Cohort != 2021) %>% 
+     mutate(APR = ifelse(APR == "Yes", 1,0))  %>% 
+    tbl_summary( by = APR,
+                statistic = all_continuous() ~ "{mean} ({sd}) {min} {max}",
+                missing = "no"
+                            ) %>% add_n() %>%  add_p()
+                            
+summary_apr
