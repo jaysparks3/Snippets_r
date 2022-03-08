@@ -1,0 +1,16 @@
+library(rstatix)
+library(datarium)
+library(readr)
+library(flextable)
+library(summarytools)
+ test <- state.data %>%  filter(Cohort != 20212022) %>%  filter(APPLICANT_TIER >=3) %>% filter(Cohort >= 20172018) %>% 
+     filter(APR != "NA") %>% 
+     filter(!is.na(APR) , !is.na(Cohort)) %$%
+    ctable(  State.Final,APR,
+            prop = "r", chisq = TRUE, headings = FALSE
+    ) %>%
+    print(
+        method = "render",
+        style = "rmarkdown",
+        footnote = NA
+    )
