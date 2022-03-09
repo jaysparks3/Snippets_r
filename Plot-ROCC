@@ -1,0 +1,38 @@
+### Optimal Values Cutoff (ROCC)
+p_1 <- predict(admitted_glm, TrainingSet, type="response")
+pred_1_s <- prediction(p_1, TrainingSet$APR)
+#ROC Curve ( not always right to choose)
+library(caTools)
+model_AUC <- colAUC(p_2, TestingSet$APR, plotROC = T)
+abline(h = model_AUC, col="blue")
+abline(a=0, b=1)
+text(0.2, 0.9, cex= 0.8, labels = paste("Optimal Value for cutoff:", round(model_AUC,4)))
+
+
+roc.perf = performance(pred_1_s, measure = "tpr", x.measure = "fpr")
+plot(roc.perf)
+abline(a=0, b= 1)
+
+cost.perf <-  performance(pred_1_s, "cost")
+pred_1_s@cutoffs[[1]][which.min(cost.perf@y.values[[1]])]
+
+#Optimal value
+opt.cut = function(perf, pred){
+    cut.ind = mapply(FUN=function(x, y, p){
+        d = (x - 0)^2 + (y-1)^2
+        ind = which(d == min(d))
+        c(sensitivity = y[[ind]], specificity = 1-x[[ind]], 
+            cutoff = p[[ind]])
+    }, perf@x.values, perf@y.values, pred@cutoffs)
+}
+print(opt.cut(roc.perf, pred_1_s))
+
+#Accuracy vs cutoff
+acc.ref <- ROCR::performance(pred_1_s, measure = "acc")
+plot(acc.ref)
+
+#Maximum accuracy and cutoff
+ind = which.max( slot(acc.ref, "y.values")[[1]] )
+acc = slot(acc.ref, "y.values")[[1]][ind]
+cutoff = slot(acc.ref, "x.values")[[1]][ind]
+print(c(accuracy= acc, cutoff = cutoff))
