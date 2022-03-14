@@ -1,0 +1,9 @@
+    
+    ### Examples
+    mutate_at(varis_date, funs(as.Date(., "%m/%d/%Y"))) %>% 
+    mutate(Daysoffertodec = DEC_DATE- OFFER_DATE ) %>% 
+    mutate(appMonth= format(as.Date(APP_DT), "%Y/%m") ,
+           HS_gradu = format(as.Date(HS_GRAD_DT), "%Y"), HS_gradu =as.double(HS_gradu),
+           cohort_m =  rep(2020),
+           Gradu_yrs = cohort_m - HS_gradu) %>% 
+    mutate( AGE= round( as.numeric(difftime("2020-08-01", DOB, units = "days"))/365.25, 2))
