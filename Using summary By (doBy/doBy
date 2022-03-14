@@ -8,3 +8,10 @@ boxplot(AVE_HS_APR ~ APR, data=glm.data)
 g4 <- ggplot(glm.data , aes(x=factor(is.math.reme), fill=factor(APR))) +  geom_bar() +labs(title = " APR by ACT Math Remedication")
 g5 <- ggplot(glm.data , aes(x=factor(HSAPR), fill=factor(APR))) +  geom_bar() 
 g6 <- ggplot(glm.data , aes(x=factor(Total_ACT_T), fill=factor(APR))) +  geom_bar()
+
+
+# functions
+fun_mean <- function(x){
+    c(M=mean(x, na.rm=T), V=var(x),n=length(x), MIN=min(x),MAX=max(x))
+}
+summaryBy(Best_HSGPA ~ Cohort, app.apr.info.2017to2022tier[app.apr.info.2017to2022tier$Best_HSGPA>0,], FUN = fun_mean) # weighted pga
