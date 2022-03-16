@@ -32,3 +32,40 @@ mlplot <- ggplot(con_p, aes(x= UWF1, y= UWF2, color = GPA_HIGHSCHOOL)) +
  
 ### correlation matrix
 psych::pairs.panels(num.cols.corr.raw, cex.cor=4, main="Histograms and Correlations for a Data Matrix")
+
+### Two factors in xaxis ggplot
+
+###1st example
+library(ggplot2)
+library(lubridate)
+
+ggplot(df, aes(Date, value)) +
+  geom_line() +
+  scale_x_date(date_labels="%b", date_breaks="month", expand=c(0,0)) +
+  facet_grid(~ year(Date), space="free_x", scales="free_x", switch="x") +
+  theme_bw() +
+  theme(strip.placement = "outside",
+        strip.background = element_rect(fill=NA,colour="grey50"),
+        panel.spacing=unit(0,"cm"))
+library(ggplot2)
+
+### 2nd example
+ggplot(data = df, aes(x = interaction(year, quarter, lex.order = TRUE), 
+                      y = sales, group = 1)) +
+  geom_line(colour = "blue") +
+  annotate(geom = "text", x = seq_len(nrow(df)), y = 34, label = df$quarter, size = 4) +
+  annotate(geom = "text", x = 2.5 + 4 * (0:4), y = 32, label = unique(df$year), size = 6) +
+  coord_cartesian(ylim = c(35, 65), expand = FALSE, clip = "off") +
+  theme_bw() +
+  theme(plot.margin = unit(c(1, 1, 4, 1), "lines"),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank())       
+
+### simple version
+ testp <- ggplot(data=apr_dropout__1st.term.data.math_t, aes( x=interaction(FirstFallUWFGPA_G,Cohort, lex.order = T))) +  
+     geom_bar(color="blue" )  +
+     facet_grid(~ FirstFallUWFGPA_G, space = "free_x", scales = "free_x", switch = "x")  
+ggplotly(testp)
+
