@@ -1,0 +1,3 @@
+### major switches
+
+MajorY1[, SwitchedMajor := as.numeric(length(unique(c(UWFMajor1,UWFMajor2,UWFMajor3))) == 1), by = seq_len(nrow(MajorY1))]
