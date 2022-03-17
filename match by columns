@@ -1,3 +1,15 @@
 ### major switches
 
+write.csv(ENC_GPA_ID_temp, "ENC_GPA_ID_TERM_temp.csv", row.names = F)
+MajorY1 <- ENC_GPA_ID_temp %>% 
+        group_by(UWFID) %>%
+      select(UWFID,Cohort, Stu_MajorDesc, Stu_DEMO_TIME_FRAME) %>% unique() %>% 
+    mutate(UWFTERCount=row_number()) %>% mutate(UWFTERM = paste("UWFMajor", UWFTERCount, sep="")) %>% select(-Stu_DEMO_TIME_FRAME, -UWFTERCount) %>% 
+    tidyr::pivot_wider(names_from = UWFTERM, values_from =Stu_MajorDesc ) %>%
+    mutate(UWFMajor2 = ifelse(is.na(UWFMajor2), UWFMajor1, UWFMajor2)) %>% 
+    mutate(UWFMajor3 = ifelse(is.na(UWFMajor3),  UWFMajor2, UWFMajor3)) %>%  
+    data.table::data.table()
+    
 MajorY1[, SwitchedMajor := as.numeric(length(unique(c(UWFMajor1,UWFMajor2,UWFMajor3))) == 1), by = seq_len(nrow(MajorY1))]
+MajorY2 <- MajorY1 %>%  mutate(SwitchedMajor = ifelse(SwitchedMajor ==1, "Stayed","Switched")) %>% 
+    select(1,2, "Fall1Major"=UWFMajor1,  "EndY1Major"=UWFMajor3,SwitchedMajor )
