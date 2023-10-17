@@ -1,0 +1,7 @@
+# box plot with gein_jitter
+
+ggplot(nprs_scale, aes(x=transition_diff_nprs, y = diff_womac,
+    color = transition_diff_nprs)) +
+    geom_boxplot(outlier.color = "black") +
+    geom_jitter(size = 1.5, width = 0.3)+
+    stat_summary( fun ="mean", color = "red", shape = 8)
